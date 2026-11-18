@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Security Scanner - Client</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 700px;
+            margin: 40px auto;
+        }
+
+        section {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        input,
+        button {
+            padding: 8px;
+            font-size: 16px;
+            margin: 4px 0;
+        }
+
+        li {
+            font-family: monospace;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Security Scanner &mdash; Client Interface</h1>
+
+    <section>
+        <h2>1. Scanner (SQLi / XSS)</h2>
+        <input type="text" id="scanUrl" placeholder="http://localhost:3000" style="width:300px">
+        <button onclick="runScan()">Scan</button>
+        <pre id="scanResult"></pre>
+    </section>
+
+    <section>
+        <h2>2. Password Guesser</h2>
+        <input type="text" id="seedInput" placeholder="e.g. molly">
+        <button onclick="generate()">Generate</button>
+        <ul id="results"></ul>
+
+        <h3>Reinforce with a known working password</h3>
+        <input type="text" id="reinforceInput" placeholder="e.g. molly2024!">
+        <button onclick="reinforce()">Reinforce</button>
+        <p id="reinforceStatus"></p>
+    </section>
+
+    <section>
+        <h2>3. Recon (Shodan-style)</h2>
+        <input type="text" id="hostIp" placeholder="192.168.1.100" style="width:200px">
+        <button onclick="lookupHost()">Lookup</butto n>
+            <pre id="hostResult"></p    re>
+    </section>
+
+    <script>
+        async function runScan() {
+            const url = document.getElementById('scanUrl').value;
+            const res = await fetch('http://localhost:3002/api/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'secu-demo-key-2026'
+                },
+                body: JSON.stringify({ url: url })
+            });
+            const data = await res.json();
+            document.getElementById('scanResult').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function generate() {
+            const seed = document.getElementById('seedInput').value;
+            const res = await fetch('http://localhost:5000/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'secu-demo-key-2026'
+                },
+                body: JSON.stringify({ seed: seed })
+            });
+            const data = await res.json();
+            const list = document.getElementById('results');
+            list.innerHTML = '';
+            data.candidates.forEach(c => {
+                const li = document.createElement('li');
+                li.textContent = c;
+                list.appendChild(li);
+            });
+
+
+        }
+
+        async function reinforce() {
+            const password = document.getElementById('reinforceInput').value;
+            const res = await fetch('http://localhost:5000/reinforce', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': 'secu-demo-key-2026'
+                },
+                body: JSON.stringify({ password: password })
+            });
+            const data = await res.json();
+            document.getElementById('reinforceStatus').textContent =
+                `Status: ${data.status} (${data.password})`;
+        }
+
+        async function lookupHost() {
+            const ip = document.getElementById('hostIp').value;
+            const res = await fetch(`http://localhost:8080/api/host/${ip}`, {
+                headers: { 'X-API-Key': 'secu-demo-key-2026' }
+            });
+            const data = await res.json();
+            document.getElementById('hostResult').textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+__pycache__/
+*.pyc
+target/
+.env
+.vscode/
+.idea/
+password-guesser/rockyou.txt
+password-guesser/archive.zip
+ShodanClone.zip

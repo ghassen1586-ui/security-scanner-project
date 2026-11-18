@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Search</title></head>
+<body>
+    <h1>Search Articles</h1>
+    
+    <form method="GET" action="/search">
+        <input type="text" name="q" value="<%= query %>"/>
+        <button type="submit">Search</button>
+    </form>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <p style="color:red"><%= error %></p>
+    <% } %>
+
+    <% results.forEach(result => { %>
+        <div>
+            <h3><%= result.id %> - <%= result.title %></h3>
+            <p><%= result.content %></p>
+        </div>
+    <% }) %>
+
+    <a href="/comments">Back</a>
+</body>
+</html>

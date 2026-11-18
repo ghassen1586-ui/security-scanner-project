@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comments - Vulnerable</title>
+</head>
+<body>
+    <h1>Welcome <%= user.username %>!</h1>
+    
+    <h2>Leave a comment:</h2>
+    <form method="POST" action="/comments">
+        <textarea name="comment" placeholder="Write something..."></textarea><br>
+        <button type="submit">Post</button>
+    </form>
+
+    <h2>Comments:</h2>
+    <% if (comments) { %>
+        <% comments.forEach(comment => { %>
+            <div><%- comment.content %></div>
+        <% }) %>
+    <% } %>
+
+    <a href="/login">Logout</a>
+</body>
+</html>

@@ -1,0 +1,25 @@
+services:
+  vulnerable:
+    build: ./vulnerable
+    ports:
+      - "3000:3000"
+
+  secure:
+    build: ./secure
+    ports:
+      - "3001:3001"
+
+  scanner:
+    build: ./scanner
+    ports:
+      - "3002:3002"
+
+  password-guesser:
+    build: ./password-guesser
+    ports:
+      - "5000:5000"
+
+  shodan-clone:
+    build: ./shodan_clone
+    ports:
+      - "8080:8080"
