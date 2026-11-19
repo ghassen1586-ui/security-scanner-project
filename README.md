@@ -25,9 +25,9 @@ flowchart TB
         Client -->|"1 POST /api/scan/vulnerabilities"| Scanner1["Scanner API"]
         Scanner1 -->|"exploits + harvests emails via IDOR"| Target1["Vulnerable / Secure Site"]
         Scanner1 -->|"forwards harvestedEmails[], SOAP"| Guesser1["Password Guesser"]
-        Scanner1 -.->|"returns harvestedEmails[]"| Client
         Client -->|"2 triggers attack with harvestedEmails[], SOAP"| Guesser1
         Guesser1 -->|"mines, brute-forces, reinforces"| Target1
+        Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
         Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
     end
 
