@@ -27,7 +27,7 @@ flowchart TB
         Scanner1 -->|"forwards harvestedEmails[], SOAP"| Guesser1["Password Guesser"]
         Client -->|"2 triggers attack with harvestedEmails[], SOAP"| Guesser1
         Guesser1 -->|"mines, brute-forces, reinforces"| Target1
-        Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
+        
         Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
     end
 
