@@ -125,6 +125,72 @@ async function getMinedWords(url) {
     }
 }
 
+const OWASP_INFO = {
+    sqli: { name: 'SQL Injection', owasp: 'A03:2021 – Injection', cwe: 'CWE-89' },
+    xss: { name: 'Cross-Site Scripting (XSS)', owasp: 'A03:2021 – Injection', cwe: 'CWE-79' },
+    idor: { name: 'Insecure Direct Object Reference (IDOR)', owasp: 'A01:2021 – Broken Access Control', cwe: 'CWE-639' }
+};
+
+// Tries the SQLi-bypass login first (works on vulnerable), falls back to a real
+// known login (works on secure) — so IDOR testing works against either target.
+async function loginAnyWay(baseUrl) {
+    const bypassCookie = await loginAndGetCookie(`${baseUrl}/login`);
+    if (bypassCookie) return bypassCookie;
+
+    try {
+        const response = await axios.post(`${baseUrl}/login`,
+            `email=${encodeURIComponent('admin@secure.com')}&password=${encodeURIComponent('admin123')}`,
+            {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                maxRedirects: 0,
+                validateStatus: () => true
+            }
+        );
+        const cookie = response.headers['set-cookie'];
+        return cookie ? cookie[0] : null;
+    } catch (err) {
+        return null;
+    }
+}
+
+async function testAndHarvestIDOR(baseUrl) {
+    const cookie = await loginAnyWay(baseUrl);
+    if (!cookie) {
+        return { vulnerable: false, error: 'Could not establish a session to test IDOR', harvestedEmails: [] };
+    }
+
+    const myRes = await axios.get(`${baseUrl}/account`, {
+        headers: { Cookie: cookie },
+        validateStatus: () => true
+    });
+    const idMatch = myRes.data.match(/<strong>ID:<\/strong>\s*(\d+)/);
+    const ownId = idMatch ? parseInt(idMatch[1]) : null;
+
+    const harvested = [];
+    for (let id = 1; id <= 10; id++) {
+        const res = await axios.get(`${baseUrl}/account?id=${id}`, {
+            headers: { Cookie: cookie },
+            validateStatus: () => true
+        });
+        if (res.status === 200) {
+            const emailMatch = res.data.match(/<strong>Email:<\/strong>\s*([^\s<]+)/);
+            if (emailMatch) harvested.push({ id, email: emailMatch[1] });
+        }
+    }
+
+    const others = harvested.filter(h => h.id !== ownId);
+    const vulnerable = others.length > 0;
+
+    return {
+        vulnerable,
+        payload: vulnerable ? `GET ${baseUrl}/account?id=${others[0].id}` : null,
+        evidence: vulnerable
+            ? `Logged in as account ${ownId}, but accessed ${others.length} other account(s), e.g. id ${others[0].id} (email: ${others[0].email})`
+            : 'No other account was accessible — ownership check appears enforced',
+        harvestedEmails: [...new Set(harvested.map(h => h.email))]
+    };
+}
+
 async function testXSS(baseUrl) {
     // baseUrl example: http://localhost:3000
     const loginUrl = `${baseUrl}/login`;
@@ -191,6 +257,33 @@ async function testSQLi(baseUrl) {
     }
     return { vulnerable: false };
 }
+
+app.post('/api/scan/vulnerabilities', async (req, res) => {
+    const targetUrl = req.body.url;
+    if (!targetUrl) return res.status(400).json({ error: 'Missing url parameter' });
+
+    const sqliResult = await testSQLi(targetUrl);
+    const xssResult = await testXSS(targetUrl);
+    const idorResult = await testAndHarvestIDOR(targetUrl);
+
+    const findings = [
+        { ...OWASP_INFO.sqli, ...sqliResult },
+        { ...OWASP_INFO.xss, ...xssResult },
+        { ...OWASP_INFO.idor, vulnerable: idorResult.vulnerable, payload: idorResult.payload, evidence: idorResult.evidence }
+    ];
+
+    const report = {
+        type: 'vulnerability-scan',
+        target: targetUrl,
+        timestamp: new Date().toISOString(),
+        findings: findings,
+        harvestedEmails: idorResult.harvestedEmails
+    };
+
+    await scansCollection.insertOne(report);
+    res.json(report);
+});
+
 
 // the SOA operation - this is your main "service"
 app.post('/api/scan', async (req, res) => {

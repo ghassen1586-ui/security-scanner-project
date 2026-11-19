@@ -1,129 +1,681 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Security Scanner - Client</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Scanner — Attack Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
+        :root {
+            --bg: #0a0e14;
+            --panel: #111826;
+            --panel-2: #0d1320;
+            --border: #1f2a3c;
+            --text: #e6edf6;
+            --text-dim: #8b9bb4;
+            --red: #ff4d6a;
+            --red-dim: #3a1420;
+            --green: #2ee6a6;
+            --green-dim: #0f2e26;
+            --amber: #ffb84d;
+            --amber-dim: #2e2210;
+            --blue: #5b9dff;
+            --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+            --sans: 'Inter', -apple-system, system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial;
-            max-width: 700px;
-            margin: 40px auto;
+            margin: 0;
+            background: radial-gradient(circle at 20% 0%, #101826 0%, #090d14 60%);
+            color: var(--text);
+            font-family: var(--sans);
+            min-height: 100vh;
+            padding: 40px 20px 80px;
         }
 
-        section {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 20px;
+        .wrap {
+            max-width: 920px;
+            margin: 0 auto;
+        }
+
+        header.top {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        header.top .tag {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: var(--green);
+            background: var(--green-dim);
+            border: 1px solid #1e4a3c;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+
+        header.top h1 {
+            font-size: 34px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            letter-spacing: -0.5px;
+        }
+
+        header.top p {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin: 0;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .stage {
+            background: linear-gradient(180deg, var(--panel), var(--panel-2));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
             margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
         }
 
-        input,
-        button {
-            padding: 8px;
-            font-size: 16px;
-            margin: 4px 0;
+        .stage::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(91, 157, 255, 0.4), transparent);
         }
 
-        li {
-            font-family: monospace;
+        .stage.locked {
+            opacity: 0.4;
+            pointer-events: none;
         }
 
-        pre {
-            background: #f4f4f4;
-            padding: 12px;
-            overflow-x: auto;
+        .stage-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stage-num {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--bg);
+            background: var(--blue);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stage-head h2 {
+            font-size: 18px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .stage-head .sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 220px;
+            background: #0a0f18;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 13px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--blue);
+        }
+
+        .quick-select {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chip-btn {
+            background: #0a0f18;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: var(--mono);
+            font-size: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .chip-btn:hover {
+            border-color: var(--blue);
+            color: var(--text);
+        }
+
+        button.action {
+            background: var(--blue);
+            color: #061018;
+            border: none;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 12px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity 0.15s;
+        }
+
+        button.action:hover {
+            opacity: 0.88;
+        }
+
+        button.action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.action.attack {
+            background: var(--red);
+        }
+
+        button.action.recon {
+            background: var(--amber);
+            color: #1a1200;
+        }
+
+        .results {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-line {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--blue);
+        }
+
+        .status-line::after {
+            content: '▌';
+            animation: blink 1s steps(1) infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .error {
+            color: var(--red);
+            font-size: 13px;
+            font-family: var(--mono);
+        }
+
+        .finding-card {
+            background: #0a0f18;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+        }
+
+        .finding-card.vuln {
+            border-color: #4a1b28;
+            background: linear-gradient(180deg, #140b10, #0a0f18);
+        }
+
+        .finding-card.safe {
+            border-color: #163228;
+        }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .finding-name {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .status-badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .status-badge.vuln {
+            background: var(--red-dim);
+            color: var(--red);
+            border: 1px solid #4a1b28;
+        }
+
+        .status-badge.safe {
+            background: var(--green-dim);
+            color: var(--green);
+            border: 1px solid #1e4a3c;
+        }
+
+        .status-badge.info {
+            background: #10203a;
+            color: var(--blue);
+            border: 1px solid #1d3a5e;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 5px;
+            background: #141b2a;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+
+        .detail {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .detail .label {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .detail.reinforced {
+            color: var(--green);
+            margin-top: 12px;
+        }
+
+        code {
+            font-family: var(--mono);
+            background: #0d1320;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--amber);
+            border: 1px solid var(--border);
+        }
+
+        .email-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .email-chip {
+            font-family: var(--mono);
+            font-size: 12px;
+            background: #141b2a;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .email-chip.mono {
+            color: var(--blue);
+        }
+
+        .cracked-box {
+            margin-top: 14px;
+            background: var(--red-dim);
+            border: 1px solid #5a1f2d;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+
+        .cracked-label {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--red);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .cracked-creds code {
+            font-size: 14px;
+            color: #ffd9e0;
+        }
+
+        .json-dump {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--text-dim);
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 12px;
+            color: #4a5a72;
+            font-family: var(--mono);
         }
     </style>
 </head>
 
 <body>
-    <h1>Security Scanner &mdash; Client Interface</h1>
+    <div class="wrap">
 
-    <section>
-        <h2>1. Scanner (SQLi / XSS)</h2>
-        <input type="text" id="scanUrl" placeholder="http://localhost:3000" style="width:300px">
-        <button onclick="runScan()">Scan</button>
-        <pre id="scanResult"></pre>
-    </section>
+        <header class="top">
+            <span class="tag">● LIVE ATTACK SIMULATION</span>
+            <h1>Vulnerability Scanner — Attack Report</h1>
+            <p>End-to-end exploitation chain: broken access control → credential harvesting → automated password attack
+                → host reconnaissance.</p>
+        </header>
 
-    <section>
-        <h2>2. Password Guesser</h2>
-        <input type="text" id="seedInput" placeholder="e.g. molly">
-        <button onclick="generate()">Generate</button>
-        <ul id="results"></ul>
+        <!-- STAGE 1: SCAN -->
+        <section class="stage" id="stage1">
+            <div class="stage-head">
+                <div class="stage-num">01</div>
+                <div>
+                    <h2>Vulnerability Scan</h2>
+                    <div class="sub">SQL Injection · Cross-Site Scripting · Insecure Direct Object Reference</div>
+                </div>
+            </div>
 
-        <h3>Reinforce with a known working password</h3>
-        <input type="text" id="reinforceInput" placeholder="e.g. molly2024!">
-        <button onclick="reinforce()">Reinforce</button>
-        <p id="reinforceStatus"></p>
-    </section>
+            <div class="quick-select">
+                <span class="chip-btn" onclick="setTarget('http://vulnerable:3000')">Vulnerable Site</span>
+                <span class="chip-btn" onclick="setTarget('http://secure:3000')">Secure Site</span>
+            </div>
+            <br>
+            <div class="controls">
+                <input type="text" id="targetInput" placeholder="http://vulnerable:3000" value="http://vulnerable:3000">
+                <button class="action" id="scanBtn" onclick="runScan()">Run Vulnerability Scan</button>
+            </div>
 
-    <section>
-        <h2>3. Recon (Shodan-style)</h2>
-        <input type="text" id="hostIp" placeholder="192.168.1.100" style="width:200px">
-        <button onclick="lookupHost()">Lookup</butto n>
-            <pre id="hostResult"></p    re>
-    </section>
+            <div class="results" id="scanResults"></div>
+        </section>
+
+        <!-- STAGE 2: PASSWORD ATTACK -->
+        <section class="stage locked" id="stage2">
+            <div class="stage-head">
+                <div class="stage-num">02</div>
+                <div>
+                    <h2>Password Attack</h2>
+                    <div class="sub">Site-content mining → mangled wordlist → ML-generated candidates → credential
+                        stuffing</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="action attack" id="attackBtn" onclick="runPasswordAttack()">Run Password Attack</button>
+            </div>
+
+            <div class="results" id="attackResults"></div>
+        </section>
+
+        <!-- STAGE 3: RECON -->
+        <section class="stage" id="stage3">
+            <div class="stage-head">
+                <div class="stage-num">03</div>
+                <div>
+                    <h2>Host Reconnaissance</h2>
+                    <div class="sub">Open ports, exposed services and banners for the target host</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="text" id="ipInput" placeholder="e.g. 192.168.1.10">
+                <button class="action recon" id="reconBtn" onclick="runRecon()">Run Recon</button>
+            </div>
+
+            <div class="results" id="reconResults"></div>
+        </section>
+
+        <footer>Educational security demonstration — class project · not for use against real targets</footer>
+    </div>
 
     <script>
+        const SCANNER_URL = 'http://localhost:3002';
+        const PWGUESSER_URL = 'http://localhost:5000';
+        const SHODAN_URL = 'http://localhost:8080';
+        const API_KEY = 'secu-demo-key-2026';
+
+        let targetUrl = '';
+        let harvestedEmails = [];
+
+        function setTarget(url) {
+            document.getElementById('targetInput').value = url;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str ?? '';
+            return div.innerHTML;
+        }
+
+        function escapeXml(str) {
+            return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
         async function runScan() {
-            const url = document.getElementById('scanUrl').value;
-            const res = await fetch('http://localhost:3002/api/scan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': 'secu-demo-key-2026'
-                },
-                body: JSON.stringify({ url: url })
-            });
-            const data = await res.json();
-            document.getElementById('scanResult').textContent = JSON.stringify(data, null, 2);
+            const url = document.getElementById('targetInput').value.trim();
+            if (!url) { alert('Enter a target URL first.'); return; }
+            targetUrl = url;
+
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true; btn.textContent = 'Scanning…';
+            const resultsEl = document.getElementById('scanResults');
+            resultsEl.innerHTML = '<p class="status-line">Running SQLi, XSS and IDOR tests</p>';
+
+            try {
+                const res = await fetch(`${SCANNER_URL}/api/scan/vulnerabilities`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': API_KEY
+                    },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                harvestedEmails = data.harvestedEmails || [];
+                renderScanResults(data);
+                document.getElementById('stage2').classList.remove('locked');
+            } catch (err) {
+                resultsEl.innerHTML = `<p class="error">Scan failed: ${escapeHtml(err.message)}</p>`;
+            } finally {
+                btn.disabled = false; btn.textContent = 'Run Vulnerability Scan';
+            }
         }
 
-        async function generate() {
-            const seed = document.getElementById('seedInput').value;
-            const res = await fetch('http://localhost:5000/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': 'secu-demo-key-2026'
-                },
-                body: JSON.stringify({ seed: seed })
-            });
-            const data = await res.json();
-            const list = document.getElementById('results');
-            list.innerHTML = '';
-            data.candidates.forEach(c => {
-                const li = document.createElement('li');
-                li.textContent = c;
-                list.appendChild(li);
+        function renderScanResults(data) {
+            const resultsEl = document.getElementById('scanResults');
+            let html = '';
+
+            data.findings.forEach(f => {
+                const statusClass = f.vulnerable ? 'vuln' : 'safe';
+                const statusLabel = f.vulnerable ? 'VULNERABLE' : 'PROTECTED';
+                html += `
+        <div class="finding-card ${statusClass}">
+          <div class="finding-header">
+            <span class="finding-name">${escapeHtml(f.name)}</span>
+            <span class="status-badge ${statusClass}">${statusLabel}</span>
+          </div>
+          <div class="badges">
+            <span class="badge">${escapeHtml(f.owasp)}</span>
+            <span class="badge">${escapeHtml(f.cwe)}</span>
+          </div>
+          ${f.payload ? `<div class="detail"><span class="label">Payload:</span> <code>${escapeHtml(f.payload)}</code></div>` : ''}
+          <div class="detail"><span class="label">Evidence:</span> ${escapeHtml(f.evidence || '—')}</div>
+        </div>`;
             });
 
+            if (harvestedEmails.length > 0) {
+                html += `
+        <div class="finding-card vuln">
+          <div class="finding-header">
+            <span class="finding-name">Harvested Accounts (via IDOR)</span>
+            <span class="status-badge vuln">${harvestedEmails.length} EXPOSED</span>
+          </div>
+          <div class="email-list">
+            ${harvestedEmails.map(e => `<span class="email-chip mono">${escapeHtml(e)}</span>`).join('')}
+          </div>
+        </div>`;
+            }
 
+            resultsEl.innerHTML = html;
         }
 
-        async function reinforce() {
-            const password = document.getElementById('reinforceInput').value;
-            const res = await fetch('http://localhost:5000/reinforce', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': 'secu-demo-key-2026'
-                },
-                body: JSON.stringify({ password: password })
-            });
-            const data = await res.json();
-            document.getElementById('reinforceStatus').textContent =
-                `Status: ${data.status} (${data.password})`;
+        async function runPasswordAttack() {
+            const resultsEl = document.getElementById('attackResults');
+
+            if (harvestedEmails.length === 0) {
+                resultsEl.innerHTML = `<p class="error">IDOR didn't work — no accounts were harvested. Run the vulnerability scan first.</p>`;
+                return;
+            }
+
+            const btn = document.getElementById('attackBtn');
+            btn.disabled = true; btn.textContent = 'Attacking…';
+            resultsEl.innerHTML = '<p class="status-line">Mining site content, generating candidates, brute-forcing</p>';
+
+            const emailTags = harvestedEmails.map(e => `<email>${escapeXml(e)}</email>`).join('\n      ');
+            const soapRequest = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <passwordAttack>
+      <url>${escapeXml(targetUrl)}</url>
+      ${emailTags}
+    </passwordAttack>
+  </soap:Body>
+</soap:Envelope>`;
+
+            try {
+                const res = await fetch(`${PWGUESSER_URL}/soap`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/xml',
+                        'X-API-Key': API_KEY
+                    },
+                    body: soapRequest
+                });
+                const text = await res.text();
+                const xml = new DOMParser().parseFromString(text, 'text/xml');
+                renderAttackResults(xml);
+            } catch (err) {
+                resultsEl.innerHTML = `<p class="error">Password attack failed: ${escapeHtml(err.message)}</p>`;
+            } finally {
+                btn.disabled = false; btn.textContent = 'Run Password Attack';
+            }
         }
 
-        async function lookupHost() {
-            const ip = document.getElementById('hostIp').value;
-            const res = await fetch(`http://localhost:8080/api/host/${ip}`, {
-                headers: { 'X-API-Key': 'secu-demo-key-2026' }
-            });
-            const data = await res.json();
-            document.getElementById('hostResult').textContent = JSON.stringify(data, null, 2);
+        function renderAttackResults(xml) {
+            const resultsEl = document.getElementById('attackResults');
+            const minedWords = Array.from(xml.getElementsByTagName('minedWord')).map(n => n.textContent);
+            const candidatesTried = xml.getElementsByTagName('candidatesTried')[0]?.textContent || '0';
+            const foundEmail = xml.getElementsByTagName('foundEmail')[0]?.textContent || '';
+            const foundPassword = xml.getElementsByTagName('foundPassword')[0]?.textContent || '';
+            const reinforced = xml.getElementsByTagName('reinforced')[0]?.textContent === 'true';
+
+            let html = `
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="finding-name">Mined Wordlist (from target site content)</span>
+          <span class="status-badge info">${minedWords.length} WORDS</span>
+        </div>
+        <div class="email-list">
+          ${minedWords.slice(0, 20).map(w => `<span class="email-chip mono">${escapeHtml(w)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="finding-name">Credential Stuffing Attempt</span>
+          <span class="status-badge info">${escapeHtml(candidatesTried)} CANDIDATES TRIED</span>
+        </div>`;
+
+            if (foundPassword) {
+                html += `
+        <div class="cracked-box">
+          <div class="cracked-label">CREDENTIAL CRACKED</div>
+          <div class="cracked-creds"><code>${escapeHtml(foundEmail)}</code> : <code>${escapeHtml(foundPassword)}</code></div>
+        </div>
+        ${reinforced ? '<div class="detail reinforced">✓ Model reinforced — this success feeds back into future password generation.</div>' : ''}`;
+            } else {
+                html += `<div class="detail">No credentials cracked within the generated candidate set.</div>`;
+            }
+
+            html += `</div>`;
+            resultsEl.innerHTML = html;
+        }
+
+        async function runRecon() {
+            const ip = document.getElementById('ipInput').value.trim();
+            if (!ip) { alert('Enter a target IP first.'); return; }
+
+            const btn = document.getElementById('reconBtn');
+            btn.disabled = true; btn.textContent = 'Scanning…';
+            const resultsEl = document.getElementById('reconResults');
+            resultsEl.innerHTML = '<p class="status-line">Querying host intelligence</p>';
+
+            try {
+                const res = await fetch(`${SHODAN_URL}/api/host/${encodeURIComponent(ip)}`, {
+                    headers: { 'X-API-Key': API_KEY }
+                });
+
+                if (res.status === 204) {
+                    resultsEl.innerHTML = `<p class="error">No reconnaissance data found for ${escapeHtml(ip)}.</p>`;
+                    return;
+                }
+
+                const data = await res.json();
+                resultsEl.innerHTML = `<div class="finding-card"><pre class="json-dump">${escapeHtml(JSON.stringify(data, null, 2))}</pre></div>`;
+            } catch (err) {
+                resultsEl.innerHTML = `<p class="error">Recon failed: ${escapeHtml(err.message)}</p>`;
+            } finally {
+                btn.disabled = false; btn.textContent = 'Run Recon';
+            }
         }
     </script>
 </body>
