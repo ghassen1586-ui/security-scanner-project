@@ -195,6 +195,17 @@ def soap_endpoint():
         <reinforced>{'true' if result['reinforced'] else 'false'}</reinforced>
         </passwordAttackResponse>'''
         return Response(make_soap_response(response_body), mimetype='text/xml')
+    elif op_name == 'receiveHarvestedEmails':
+        url = operation.find('url').text or ''
+        emails = [e.text for e in operation.findall('email') if e.text]
+
+        print(f'[SOA] Received {len(emails)} harvested email(s) from Scanner for target {url}: {emails}', flush=True)
+
+        response_body = f'''<receiveHarvestedEmailsResponse>
+        <received>{len(emails)}</received>
+        <status>logged</status>
+        </receiveHarvestedEmailsResponse>'''
+        return Response(make_soap_response(response_body), mimetype='text/xml')
 
     return Response(make_soap_response('<error>Unknown operation</error>'), mimetype='text/xml', status=400)
 

