@@ -18,21 +18,30 @@ Point the scanner at a target URL and it will:
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    Client[🌐 HTML/JS Client] --> Scanner
-    Flutter[📱 Flutter App] --> Scanner
+flowchart TB
+    subgraph Dashboard["Live Dashboard - client calls every service directly"]
+        direction LR
+        Client["HTML/JS Client"]
+        Client -->|"1 scan + IDOR harvest"| Scanner1["Scanner API"]
+        Scanner1 -->|"exploits + harvests emails"| Target1["Vulnerable / Secure Site"]
+        Client -->|"2 harvested emails, SOAP"| Guesser1["Password Guesser"]
+        Guesser1 -->|"mines, brute-forces, reinforces"| Target1
+        Client -->|"3 host lookup"| Shodan1["Shodan-Clone"]
+    end
 
-    Scanner[Scanner API\nNode.js / REST] -->|SOAP/XML| Guesser[Password Guesser\nPython / Flask]
-    Scanner -->|REST| Shodan[Shodan-Clone\nJava / Spring Boot]
-    Scanner -->|exploits| Vuln[Vulnerable Site\nNode.js / MySQL]
-    Scanner -->|exploits| Secure[Secure Site\nNode.js / MySQL]
-    Scanner --> Mongo[(MongoDB\nScan History)]
+    subgraph Legacy["Flutter App - true service-to-service chaining"]
+        direction LR
+        Flutter["Flutter App"] -->|"REST"| Scanner2["Scanner API"]
+        Scanner2 -->|"SOAP/XML: mine + generate"| Guesser2["Password Guesser"]
+        Scanner2 -->|"exploits"| Target2["Vulnerable / Secure Site"]
+        Scanner2 -->|"REST"| Shodan2["Shodan-Clone"]
+    end
 
-    Guesser -->|mines words from| Vuln
-    Guesser -->|mines words from| Secure
+    Scanner1 --> Mongo["MongoDB - Scan History"]
+    Scanner2 --> Mongo
 ```
 
-Six services, three languages, real service-to-service chaining — not just multiple languages sitting side by side.
+In the dashboard flow, the client talks to Scanner, Password Guesser and Shodan-Clone directly — passing the emails harvested from the IDOR exploit straight into the password attack itself. The Flutter app instead proves true service-to-service chaining, where Scanner is the one calling Password Guesser and Shodan-Clone on its behalf.
 
 ## ⚔️ Vulnerable vs. Secure, side by side
 
